@@ -1,0 +1,6 @@
+{
+  "log": ["HTTP","HTTP+","Changes","Changes+","Auth","CRUD","CRUD+"],
+  "interface":":4984",
+  "adminInterface":"127.0.0.1:4985",
+  "maxFileDescriptors": 50000
+}

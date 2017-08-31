@@ -1,0 +1,76 @@
+---
+- hosts: sync-gateway-accel
+  tasks:
+  - name: Update apt-get
+    apt: update_cache=true
+    sudo: yes
+
+  - name: Adding user {{ user }}  
+    user: name=sg_accel
+          groups=sudo
+          append=yes
+    sudo: yes
+
+  - name: Creates Download directory /home/sg_accel/downloads
+    file:
+      path: /home/sg_accel/downloads
+      state: directory
+      owner: sg_accel
+      group: sg_accel
+      mode: 0775
+      recurse: yes
+    sudo: yes
+  
+  - name: Increase File Descriptor max to 500,000
+    lineinfile:
+      path: /etc/sysctl.conf
+      line: 'fs.file-max = 500000'
+    sudo: yes
+
+  - name: tcp keep alive to 5 minutes
+    lineinfile:
+      path: /etc/sysctl.conf
+      line: 'net.ipv4.tcp_keepalive_time = 600'
+    sudo: yes
+
+  - name: tcp keep alive intervals to 10
+    lineinfile:
+      path: /etc/sysctl.conf
+      line: 'net.ipv4.tcp_keepalive_intvl = 10'
+    sudo: yes
+
+  - name: tcp keep alive probes to 9
+    lineinfile:
+      path: /etc/sysctl.conf
+      line: 'net.ipv4.tcp_keepalive_probes = 9'
+    sudo: yes
+
+  - name: presist /etc/sysctl.conf
+    raw: (sysctl -p) 
+    sudo: yes    
+
+  - name: Increase File Descriptors (soft) to 500000
+    lineinfile:
+      path: /etc/security/limits.conf
+      line: '* soft  nofile 250000'
+    sudo: yes
+ 
+  - name: Increase File Descriptors (hard) to 500000
+    lineinfile:
+      path: /etc/security/limits.conf
+      line: '* hard  nofile 250000'
+    sudo: yes
+
+  - name: Download SG 1.4.1 for Ubuntu in downloads dir
+    raw: (wget https://packages.couchbase.com/releases/couchbase-sync-gateway/1.4.1/couchbase-sg-accel-enterprise_1.4.1-3_x86_64.deb -P /home/sg_accel/downloads)
+    sudo: yes
+#  - name: download Couchbase package
+#    get_url: url=https://packages.couchbase.com/releases/4.6.2/couchbase-server-enterprise_4.6.2-ubuntu14.04_amd64.deb dest=~/downloads
+
+  - name: Installing SG 1.4.1 binary
+    raw: (dpkg -i /home/sg_accel/downloads/couchbase-sg-accel-enterprise_1.4.1-3_x86_64.deb)
+    register: out
+    sudo: yes
+  
+  - debug: var=out.stdout_lines
+

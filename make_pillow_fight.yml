@@ -1,0 +1,62 @@
+---
+- hosts: pillow-fight
+  tasks:
+
+  - name: Adding user {{ user }}  
+    user: name=couchbase
+          groups=sudo
+          append=yes
+          password=couchbase
+
+  - name: Creates Download directory /home/couchbase/downloads
+    file:
+      path: /home/couchbase/downloads
+      state: directory
+      owner: couchbase
+      group: couchbase
+      mode: 0775
+      recurse: yes
+  
+  - name: Increase File Descriptor max to 500,000
+    lineinfile:
+      path: /etc/sysctl.conf
+      line: 'fs.file-max = 500000'
+
+
+  - name: presist /etc/sysctl.conf
+    raw: (sysctl -p)     
+
+  - name: Increase File Descriptors (soft) to 500000
+    lineinfile:
+      path: /etc/security/limits.conf
+      line: '* soft  nofile 250000'
+ 
+  - name: Increase File Descriptors (hard) to 500000
+    lineinfile:
+      path: /etc/security/limits.conf
+      line: '* hard  nofile 250000'
+
+  - name: Download SG 1.4.1 for Ubuntu in downloads dir
+    raw: (wget http://packages.couchbase.com/releases/couchbase-release/couchbase-release-1.0-3-amd64.deb -P /home/couchbase/downloads)
+#  - name: download Couchbase package
+#    get_url: url=https://packages.couchbase.com/releases/4.6.2/couchbase-server-enterprise_4.6.2-ubuntu14.04_amd64.deb dest=~/downloads
+
+  - name: Installing SG 1.4.1 binary
+    raw: (dpkg -i /home/couchbase/downloads/couchbase-release-1.0-3-amd64.deb)
+    register: out
+  
+  - debug: var=out.stdout_lines
+
+  - name: Update apt-get
+    apt: update_cache=true
+
+  - name: Install list of packages
+    apt:
+      name:
+      - libcouchbase-dev 
+      - libcouchbase2-bin
+      - build-essential
+      - iftop
+      - htop
+      state: installed
+#http://docs.couchbase.com/sdk-api/couchbase-c-client-2.7.5/md_doc_cbc-pillowfight.html

@@ -1,0 +1,11 @@
+---
+- hosts: all
+  tasks:
+
+ # If file exist then copy content in remote file.
+  - name: disable-thp file as service
+    copy: src=/Users/fujio.turner/Documents/disable-thp dest=/etc/init.d/disable-thp  mode=0755
+
+  - service:
+     name: disable-thp
+     state: started

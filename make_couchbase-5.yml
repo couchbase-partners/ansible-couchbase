@@ -1,0 +1,60 @@
+---
+- hosts: couchbase
+  tasks:
+  - name: Update apt-get
+    apt: update_cache=true
+    sudo: yes
+
+  - name: Adding user {{ user }}  
+    user: name=couchbase
+          groups=sudo
+          append=yes
+          password=couchbase
+    sudo: yes
+
+  - name: Creates Download directory /home/couchbase/downloads
+    file:
+      path: /home/couchbase/downloads
+      state: directory
+      owner: couchbase
+      group: couchbase
+      mode: 0775
+      recurse: yes
+    sudo: yes
+
+  - name: Change Swappiness to 0
+    raw: (sysctl vm.swappiness=0)
+    sudo: yes
+
+  - name: THP Disable
+    raw: (echo 'never' > /sys/kernel/mm/transparent_hugepage/enabled)    
+    sudo: yes
+
+  - name: THP Defrag Disable
+    raw: (echo 'never' > /sys/kernel/mm/transparent_hugepage/defrag)
+    sudo: yes
+   # If file exist then copy content in remote file.
+  
+  - name: disable-thp file as service
+    copy: src=/Users/fujio.turner/Documents/ansible/disable-thp dest=/etc/init.d/disable-thp  mode=0755
+    sudo: yes
+
+  - name: start disable-thp init.d service
+    service:
+     name: disable-thp
+     state: started
+    sudo: yes
+
+  - name: Download CB 5.0.0 Beta 2 for Ubuntun in downloads dir
+    raw: (wget https://packages.couchbase.com/releases/5.0.0-beta2/couchbase-server-enterprise_5.0.0-beta2-ubuntu14.04_amd64.deb -P /home/couchbase/downloads)
+    sudo: yes
+#  - name: download Couchbase package
+#    get_url: url=https://packages.couchbase.com/releases/4.6.2/couchbase-server-enterprise_4.6.2-ubuntu14.04_amd64.deb dest=~/downloads
+
+  - name: Installing Couchbase 5.0.0 Beta 2 binary
+    raw: (dpkg -i /home/couchbase/downloads/couchbase-server-enterprise_5.0.0-beta2-ubuntu14.04_amd64.deb)
+    register: out
+    sudo: yes
+
+  - debug: var=out.stdout_lines
+

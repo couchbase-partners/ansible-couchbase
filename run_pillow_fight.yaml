@@ -1,0 +1,25 @@
+---
+- hosts: pillow-fight
+   
+  tasks:
+  #- name: stop pillow fight
+    #shell: pkill -f pillow
+    #shell: ps -ef | grep pillow | grep -v grep | awk '{print $2}' | xargs kill -9
+
+  - set_fact:
+      IP: "188.166.173.227"
+      BUCKET: "test-hig" 
+      RATIO: "10"
+      ITEMS: "500000"
+      MIN: "900"
+      MAX: "1000"
+      PRE: "test"
+      THR: "5"
+
+  - name: start pillow fight
+    shell: nohup /usr/bin/cbc-pillowfight -r {{RATIO}} -I {{ ITEMS }} -U couchbase://{{IP}}/{{BUCKET}} -M {{MAX}} -m {{MIN}} -p {{ 100 |random(1, 10) }} -t {{THR}} &
+    #shell: ls -lahtr
+    register: out
+
+  - debug: var=out.stdout_lines
+# cbc-pillowfight -M 1000 -m 900 -U couchbase://139.59.170.150/test -r 5 -I 1000000 -t 20    
